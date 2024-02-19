@@ -21,3 +21,37 @@ jobs:
           cahce: "npm"
       - run: npm i
       - run: npm run build
+
+  deploy:
+    need: test-build
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [16.x]
+    steps:
+      - name: Build app on VM
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{secrets.HOST}}
+          username: ${{secrets.USERNAME}}
+          password: ${{secrets.PASSWORD}}
+          port: ${{secrets.PORT}}
+          scripts: |
+            eval "$(ssh-agent -s)"
+            ssh-add ~/.ssh/vm_senpro_modul2_72
+            echo "Cek folder Project";
+            [ ! -d "${HOME}/senpro/477018/modul02/senpro-github-action/"] &&
+            {
+              echo "Repository belum di clone.Clon...";
+              mkdir -p ~/senpro/477018/modul02;
+              cd ~/senpro/477018/modul02;
+              git clone git@github.com:rhafif-p/senpro-github-action.git;
+            } ||
+            {
+              echo "Repository sudah ada. Building ..";
+              cd ~/senpro/477018/modul02/senpro-github-action;
+              git restore .;
+              git pull origin main;
+            }
+
